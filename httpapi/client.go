@@ -33,11 +33,17 @@ type Client struct {
 
 // NewClient 根据 options 创建客户端。传入 HTTPClient 时会保留其传输配置；
 // 若同时指定 Timeout，则复制客户端并仅覆盖副本的超时值。
+/**
+ * *Client 返回一个指向Client结构体的指针
+ * 拿到的是对象的引用地址，而不是结构体的一份完整副本
+ */
 func NewClient(options ClientOptions) *Client {
 	hc := options.HTTPClient
 	if hc == nil {
+		// 获取这个创建的结构体的指针
 		hc = &http.Client{Timeout: options.Timeout}
 	} else if options.Timeout > 0 {
+		// 把指针指向的结构体内容复制一份
 		copyClient := *hc
 		copyClient.Timeout = options.Timeout
 		hc = &copyClient

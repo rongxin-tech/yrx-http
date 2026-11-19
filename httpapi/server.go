@@ -80,19 +80,26 @@ func RequestID(r *http.Request) string {
 	return r.Header.Get(RequestIDHeader)
 }
 
+// 高阶函数 给每一个http服务包装对应的 日志、requestID的能力
 // WithRequestLogging assigns/propagates a request ID and logs method, path,
 // status, duration, and request_id for every request.
 func WithRequestLogging(next http.Handler, logger *slog.Logger) http.Handler {
+	// 如果第三方自定义了 logger 使用第三方的 logger 对象，不然就自定义
 	if logger == nil {
 		logger = slog.Default()
 	}
+	// 设置http-handle函数
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 从请求头获取请求ID，如果请求头中没有请求ID，则生成一个新的请求ID
 		id := strings.TrimSpace(r.Header.Get(RequestIDHeader))
 		if id == "" {
+			// 生成一个新的请求ID
 			id = newRequestID()
 		}
+		// 设置请求ID到响应头
 		w.Header().Set(RequestIDHeader, id)
 		started := time.Now()
+		// 创建一个 statusWriter 的结构体实例
 		recorder := &statusWriter{ResponseWriter: w}
 		next.ServeHTTP(recorder, r.WithContext(context.WithValue(r.Context(), contextKey{}, id)))
 		status := recorder.status
